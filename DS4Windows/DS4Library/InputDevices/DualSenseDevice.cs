@@ -90,8 +90,12 @@ namespace DS4Windows.InputDevices
                         int tempStartResValue = Math.Max((int)effectSettings.maxValue, 0);
                         //Debug.WriteLine(tempStartResValue);
                         triggerMotorMode = 0x02;
+                        // original values
                         //triggerStartResistance = 0x94;
-                        triggerStartResistance = (byte)(0x94 * (tempStartResValue / 255.0));
+                        //triggerStartResistance = (byte)(0x94 * (tempStartResValue / 255.0));
+                        //will make this changeable - TODO Crazy_H
+                        //0x39-48 too loose, 0x26-38/0x28-40 差不多
+                        triggerStartResistance = (byte)(0x28 * (tempStartResValue / 255.0));
                         //triggerEffectForce = 0xB4;
                         triggerEffectForce = (byte)((0xB4 - triggerStartResistance) * (effectSettings.maxValue / 255.0) + triggerStartResistance);
                         //Debug.WriteLine(triggerEffectForce);
