@@ -4078,23 +4078,30 @@ namespace DS4Windows
                                         (device + 1).ToString(), action.details, $"{d.Battery}");
 
                                     AppLogger.LogToGui(prolog, false);
-                                    LoadTempProfile(device, action.details, true, ctrl);
-                                    //LoadProfile(device, false, ctrl);
-
-                                    if (action.uTrigger.Count == 0 && !action.automaticUntrigger)
+                                    Task.Run(() =>
                                     {
-                                        // If the new profile has any actions with the same action key (controls) than this action (which doesn't have untrigger keys) then set status of those actions to wait for the release of the existing action key. 
-                                        List<string> profileActionsNext = getProfileActions(device);
-                                        for (int actionIndexNext = 0, profileListLenNext = profileActionsNext.Count; actionIndexNext < profileListLenNext; actionIndexNext++)
+                                        d.HaltReportingRunAction(() =>
                                         {
-                                            string actionnameNext = profileActionsNext[actionIndexNext];
-                                            SpecialAction actionNext = GetProfileAction(device, actionnameNext);
-                                            int indexNext = GetProfileActionIndexOf(device, actionnameNext);
+                                            LoadTempProfile(device, action.details, true, ctrl);
 
-                                            if (actionNext.controls == action.controls)
-                                                actionDone[indexNext].dev[device] = true;
-                                        }
-                                    }
+                                            //LoadProfile(device, false, ctrl);
+
+                                            if (action.uTrigger.Count == 0 && !action.automaticUntrigger)
+                                            {
+                                                // If the new profile has any actions with the same action key (controls) than this action (which doesn't have untrigger keys) then set status of those actions to wait for the release of the existing action key. 
+                                                List<string> profileActionsNext = getProfileActions(device);
+                                                for (int actionIndexNext = 0, profileListLenNext = profileActionsNext.Count; actionIndexNext < profileListLenNext; actionIndexNext++)
+                                                {
+                                                    string actionnameNext = profileActionsNext[actionIndexNext];
+                                                    SpecialAction actionNext = GetProfileAction(device, actionnameNext);
+                                                    int indexNext = GetProfileActionIndexOf(device, actionnameNext);
+
+                                                    if (actionNext.controls == action.controls)
+                                                        actionDone[indexNext].dev[device] = true;
+                                                }
+                                            }
+                                        });
+                                    });
 
                                     return;
                                 }
@@ -4866,11 +4873,11 @@ namespace DS4Windows
                 byte value = GetByteMapping(device, control, cState, eState, tp, fieldMap);
                 int wheelDir = down ? Global.outputKBMMapping.WHEEL_TICK_DOWN :
                     Global.outputKBMMapping.WHEEL_TICK_UP;
-                double ratio = value / 255.0;
-                //Debug.WriteLine(value);
+                //double ratio = value / 255.0;
+                double ratio = (1.0 - 0.05) * (value / 255.0) + 0.05;
 
-                // Use 4 runs as a full mouse wheel tick
-                double currentWheel = ratio / 4.0;
+                // Use 3 runs as a full mouse wheel tick
+                double currentWheel = ratio / 3.0;
                 stickWheel = currentWheel + stickWheelRemainder;
                 if (stickWheel >= 1.0)
                 {

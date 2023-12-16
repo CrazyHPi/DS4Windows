@@ -2550,12 +2550,6 @@ namespace DS4Windows
             return m_Config.outputDS4TriggerMode[index];
         }
 
-        public static bool Net8Check
-        {
-            get => m_Config.net8Check;
-            set => m_Config.net8Check = value;
-        }
-
         public static string[] LaunchProgram => m_Config.launchProgram;
         public static string[] ProfilePath => m_Config.profilePath;
         public static string[] OlderProfilePath => m_Config.olderProfilePath;
@@ -3585,7 +3579,6 @@ namespace DS4Windows
         public AppThemeChoice useCurrentTheme;
         public string fakeExeFileName = string.Empty;
         public string absDisplayEDID = string.Empty;
-        public bool net8Check = false;
 
         public ControlServiceDeviceOptions deviceOptions =
             new ControlServiceDeviceOptions();
@@ -4907,17 +4900,18 @@ namespace DS4Windows
                 {
                     XmlDocument migrationDoc = new XmlDocument();
 
-                    ProfileMigration tmpMigration = new ProfileMigration(profilepath);
+                    using FileStream fileStream = new FileStream(profilepath, FileMode.Open, FileAccess.Read);
+                    ProfileMigration tmpMigration = new ProfileMigration(fileStream);
                     if (tmpMigration.RequiresMigration())
                     {
                         tmpMigration.Migrate();
                         //migrationDoc.Load(tmpMigration.ProfileReader);
-                        profileXml = tmpMigration.ProfileReader.ReadOuterXml();
+                        profileXml = tmpMigration.CurrentMigrationText;
                         migratePerformed = true;
                     }
                     else if (tmpMigration.ProfileReader != null)
                     {
-                        profileXml = tmpMigration.ProfileReader.ReadOuterXml();
+                        profileXml = tmpMigration.CurrentMigrationText;
                         //migrationDoc.Load(tmpMigration.ProfileReader);
                         //migrationDoc.Load(profilepath);
                     }
@@ -4925,6 +4919,8 @@ namespace DS4Windows
                     {
                         loaded = false;
                     }
+
+                    tmpMigration.Close();
                 }
 
                 if (device < Global.MAX_DS4_CONTROLLER_COUNT)
@@ -5145,7 +5141,8 @@ namespace DS4Windows
             {
                 XmlNode Item;
 
-                ProfileMigration tmpMigration = new ProfileMigration(profilepath);
+                using FileStream fileStream = new FileStream(profilepath, FileMode.Open, FileAccess.Read);
+                ProfileMigration tmpMigration = new ProfileMigration(fileStream);
                 if (tmpMigration.RequiresMigration())
                 {
                     tmpMigration.Migrate();
@@ -8103,7 +8100,7 @@ namespace DS4Windows
             }
 
             return !Global.linkedProfileCheck[index] ?
-                Global.ProfilePath[index] : Global.OlderProfilePath[index];
+                profilePath[index] : olderProfilePath[index];
         }
 
         public static void ParseCustomLedString(string source, LightbarDS4WinInfo destination)

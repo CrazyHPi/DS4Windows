@@ -217,26 +217,6 @@ namespace DS4WinWPF.DS4Forms
                 //{
                 //    return;
                 //}
-
-                // Temporary nag check for the .NET 8 Desktop Runtime
-                // TODO: Remove routine before starting work on DS4Windows 3.3
-                //if (!Global.Net8Check && !mainWinVM.IsNET8Available())
-                //{
-                //    Dispatcher.Invoke(() =>
-                //    {
-                //        string message = string.Format(Translations.Strings.Net8NotInstalledWinNotice, Environment.Is64BitProcess ? "x64" : "x86");
-                //        Net8NoticeWindow noticeWin = new Net8NoticeWindow(message);
-                //        if ((bool)noticeWin.ShowDialog())
-                //        {
-                //            Global.Net8Check = true;
-                //        }
-                //    });
-                //}
-                //else if (!Global.Net8Check)
-                //{
-                //    // Flag not set but .NET 8 runtime was found. Set flag in config
-                //    Global.Net8Check = true;
-                //}
             });
             Util.LogAssistBackgroundTask(tempTask);
         }
@@ -1165,7 +1145,17 @@ Suspend support not enabled.", true);
                                         }
                                         else
                                         {
-                                            Global.LoadTempProfile(tdevice, strData[2], true, Program.rootHub);
+                                            Task.Run(() =>
+                                            {
+                                                DS4Device device = conLvViewModel.ControllerCol[tdevice].Device;
+                                                if (device != null)
+                                                {
+                                                    device.HaltReportingRunAction(() =>
+                                                    {
+                                                        Global.LoadTempProfile(tdevice, strData[2], true, Program.rootHub);
+                                                    });
+                                                }
+                                            }).Wait();
                                         }
 
                                         DS4Device device = conLvViewModel.ControllerCol[tdevice].Device;
@@ -1374,7 +1364,7 @@ Suspend support not enabled.", true);
             if (!status)
             {
                 App.rootHub.ChangeMotionEventStatus(status);
-                await Task.Delay(100).ContinueWith((t) =>
+                await Task.Delay(200).ContinueWith((t) =>
                 {
                     App.rootHub.ChangeUDPStatus(status);
                 });
@@ -1382,7 +1372,7 @@ Suspend support not enabled.", true);
             else
             {
                 Program.rootHub.ChangeUDPStatus(status);
-                await Task.Delay(100).ContinueWith((t) =>
+                await Task.Delay(200).ContinueWith((t) =>
                 {
                     App.rootHub.ChangeMotionEventStatus(status);
                 });
